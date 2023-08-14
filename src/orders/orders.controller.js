@@ -51,6 +51,27 @@ function hasDishes(req, res, next) {
   }
 }
 
+function hasQuantity(req, res, next) {
+  const { dishes } = req.body.data;
+
+  for (let i = 0; i < dishes.length; i++) {
+    const dish = dishes[i];
+    if (
+      !dish.quantity ||
+      typeof dish.quantity !== "number" ||
+      dish.quantity <= 0
+    ) {
+      return next({
+        status: 400,
+        message: `Dish ${i} must have a quantity that is an integer greater than 0`,
+      });
+    }
+  }
+
+  // If all dishes have valid quantities, proceed to the next middleware or route handler
+  next();
+}
+
 function create(req, res) {
   const { deliverTo, mobileNumber, status, dishes } = req.body.data;
   const newOrder = {
@@ -66,6 +87,6 @@ function create(req, res) {
 }
 
 module.exports = {
-  create: [hasDeliver, hasNumber, hasDishes, create],
+  create: [hasDeliver, hasNumber, hasDishes, hasQuantity, create],
   list,
 };
