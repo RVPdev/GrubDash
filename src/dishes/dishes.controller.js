@@ -7,3 +7,36 @@ const dishes = require(path.resolve("src/data/dishes-data"));
 const nextId = require("../utils/nextId");
 
 // TODO: Implement the /dishes handlers needed to make the tests pass
+
+function list(req, res) {
+    res.json({data: dishes});
+}
+
+function hasName(req, res, next) {
+    const {data : {name} = {}} = req.body;
+    if(!name || name === "") {
+        return next({
+            status: 400,
+            message: "Dish must include a name",
+        });
+    }
+    next();
+}
+
+function create(req, res) {
+    const { data: {name, description, price, image_url} = {} } = req.body;
+    const newDish = {
+        id: nextId,
+        name,
+        description,
+        price,
+        image_url,
+    };
+
+    dishes.push(newDish);
+    res.status(201).json({data: newDish});
+}
+
+module.exports = {
+    list,
+}
