@@ -82,7 +82,7 @@ function dishExist(req, res, next) {
   }
   next({
     status: 404,
-    message: `Dish id not found: ${dishId}`,
+    message: `Dish does not exist: ${dishId}.`,
   });
 }
 
@@ -92,8 +92,23 @@ function read(req, res) {
   res.json({ data: foundDish });
 }
 
+// update handler
+function update(req, res) {
+  const { dishId } = req.params;
+  const foundDish = dishes.find((dish) => dish.id === dishId);
+  const { data: { name, description, price, image_url } = {} } = req.body;
+
+  foundDish.name = name;
+  foundDish.description = description;
+  foundDish.price = price;
+  foundDish.image_url = image_url;
+
+  res.json({ data: foundDish });
+}
+
 module.exports = {
   create: [hasName, hasDescription, hasPrice, hasImage, create],
   list,
   read: [dishExist, read],
+  update: [hasName, hasDescription, hasPrice, hasImage, dishExist, update],
 };
