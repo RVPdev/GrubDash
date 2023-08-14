@@ -61,7 +61,7 @@ function hasImage(req, res, next) {
 function create(req, res) {
   const { data: { name, description, price, image_url } = {} } = req.body;
   const newDish = {
-    id: nextId,
+    id: nextId(),
     name,
     description,
     price,
@@ -93,10 +93,17 @@ function read(req, res) {
 }
 
 // update handler
-function update(req, res) {
+function update(req, res, next) {
   const { dishId } = req.params;
   const foundDish = dishes.find((dish) => dish.id === dishId);
-  const { data: { name, description, price, image_url } = {} } = req.body;
+  const { data: { name, description, price, image_url, id } = {} } = req.body;
+
+  if(id && id !== dishId){
+    return next({
+        status: 400,
+        message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}`,
+      });
+  }
 
   foundDish.name = name;
   foundDish.description = description;
@@ -110,5 +117,5 @@ module.exports = {
   create: [hasName, hasDescription, hasPrice, hasImage, create],
   list,
   read: [dishExist, read],
-  update: [hasName, hasDescription, hasPrice, hasImage, dishExist, update],
+  update: [dishExist, hasName, hasDescription, hasPrice, hasImage, update],
 };
