@@ -147,6 +147,22 @@ function update(req, res, next) {
   res.json({ data: foundOrder });
 }
 
+function destroy(req, res, next) {
+  const { orderId } = req.params;
+  const foundOrder = orders.find((order) => order.id === orderId);
+  const index = orders.findIndex((order) => order.id === orderId);
+
+  if (foundOrder.status !== "pending") {
+    return next({
+      status: 400,
+      message: "An order cannot be deleted unless it is pending.",
+    });
+  }
+
+  const deleteOrder = orders.splice(index, 1);
+  res.sendStatus(204);
+}
+
 module.exports = {
   create: [hasDeliver, hasNumber, hasDishes, hasQuantity, create],
   list,
@@ -160,4 +176,5 @@ module.exports = {
     orderExist,
     update,
   ],
+  delete: [orderExist, destroy],
 };
