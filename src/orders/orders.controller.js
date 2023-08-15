@@ -5,6 +5,7 @@ const orders = require(path.resolve("src/data/orders-data"));
 
 // Use this function to assigh ID's when necessary
 const nextId = require("../utils/nextId");
+const { json } = require("express");
 
 // TODO: Implement the /orders handlers needed to make the tests pass
 
@@ -86,7 +87,77 @@ function create(req, res) {
   res.status(201).json({ data: newOrder });
 }
 
+// read id
+
+function orderExist(req, res, next) {
+  const { orderId } = req.params;
+  const foundOrder = orders.find((order) => order.id === orderId);
+  if (foundOrder) {
+    return next();
+  }
+  next({
+    status: 404,
+    message: `Order does not exist: ${orderId}.`,
+  });
+}
+
+function read(req, res) {
+  const { orderId } = req.params;
+  const foundOrder = orders.find((order) => order.id === orderId);
+  res.json({ data: foundOrder });
+}
+
+function hasStatus(req, res, next) {
+  const { status } = req.body.data;
+  const validStatuses = ["pending", "preparing", "out-for-delivery", "delivered"];
+  
+  if (status === "delivered") {
+    return next({
+      status: 400,
+      message: "A delivered order cannot be changed",
+    });
+  } else if (!status || status === "" || !validStatuses.includes(status)) {
+    return next({
+      status: 400,
+      message:
+        "Order must have a status of pending, preparing, out-for-delivery, delivered",
+    });
+  } else {
+    next();
+  }
+}
+
+function update(req, res, next) {
+  const { orderId } = req.params;
+  const foundOrder = orders.find((order) => order.id === orderId);
+  const { data: { deliverTo, mobileNumber, status, dishes, id } = {} } = req.body;
+
+  if (id && id !== orderId) {
+    return next({
+      status: 400,
+      message: `Order id does not match route id. Order: ${id}, Route: ${orderId}.`,
+    });
+  }
+
+  foundOrder.deliverTo = deliverTo;
+  foundOrder.mobileNumber = mobileNumber;
+  foundOrder.status = status;
+  foundOrder.dishes = dishes;
+
+  res.json({ data: foundOrder });
+}
+
 module.exports = {
   create: [hasDeliver, hasNumber, hasDishes, hasQuantity, create],
   list,
+  read: [orderExist, read],
+  update: [
+    hasDeliver,
+    hasNumber,
+    hasDishes,
+    hasQuantity,
+    hasStatus,
+    orderExist,
+    update,
+  ],
 };
