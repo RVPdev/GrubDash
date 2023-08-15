@@ -1,19 +1,20 @@
+// Importing necessary modules
 const path = require("path");
 
-// Use the existing dishes data
+// Loading the dishes data
 const dishes = require(path.resolve("src/data/dishes-data"));
 
-// Use this function to assign ID's when necessary
+// Utility function for generating unique IDs
 const nextId = require("../utils/nextId");
 
 // TODO: Implement the /dishes handlers needed to make the tests pass
 
-// list dishes
+// Handler to list all dishes
 function list(req, res) {
   res.json({ data: dishes });
 }
 
-// validate the create dish
+// Middleware to validate the presence of a name in the dish
 function hasName(req, res, next) {
   const { data: { name } = {} } = req.body;
   if (!name || name === "") {
@@ -25,6 +26,7 @@ function hasName(req, res, next) {
   next();
 }
 
+// Middleware to validate the presence of a description in the dish
 function hasDescription(req, res, next) {
   const { data: { description } = {} } = req.body;
   if (!description || description === "") {
@@ -36,6 +38,7 @@ function hasDescription(req, res, next) {
   next();
 }
 
+// Middleware to validate the price of the dish
 function hasPrice(req, res, next) {
   const { data: { price } = {} } = req.body;
   if (!price || price <= 0 || !Number.isInteger(price)) {
@@ -47,6 +50,7 @@ function hasPrice(req, res, next) {
   next();
 }
 
+// Middleware to validate the presence of an image URL in the dish
 function hasImage(req, res, next) {
   const { data: { image_url } = {} } = req.body;
   if (!image_url || image_url === "") {
@@ -58,6 +62,7 @@ function hasImage(req, res, next) {
   next();
 }
 
+// Handler to create a new dish
 function create(req, res) {
   const { data: { name, description, price, image_url } = {} } = req.body;
   const newDish = {
@@ -72,8 +77,7 @@ function create(req, res) {
   res.status(201).json({ data: newDish });
 }
 
-// read handler
-
+// Middleware to check if the dish exists based on its ID
 function dishExist(req, res, next) {
   const { dishId } = req.params;
   const foundDish = dishes.find((dish) => dish.id === dishId);
@@ -86,23 +90,24 @@ function dishExist(req, res, next) {
   });
 }
 
+// Handler to retrieve a specific dish by its ID
 function read(req, res) {
   const { dishId } = req.params;
   const foundDish = dishes.find((dish) => dish.id === dishId);
   res.json({ data: foundDish });
 }
 
-// update handler
+// Handler to update a dish
 function update(req, res, next) {
   const { dishId } = req.params;
   const foundDish = dishes.find((dish) => dish.id === dishId);
   const { data: { name, description, price, image_url, id } = {} } = req.body;
 
-  if(id && id !== dishId){
+  if (id && id !== dishId) {
     return next({
-        status: 400,
-        message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}`,
-      });
+      status: 400,
+      message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}`,
+    });
   }
 
   foundDish.name = name;
@@ -113,6 +118,7 @@ function update(req, res, next) {
   res.json({ data: foundDish });
 }
 
+// Exporting the handlers to be used in the router
 module.exports = {
   create: [hasName, hasDescription, hasPrice, hasImage, create],
   list,

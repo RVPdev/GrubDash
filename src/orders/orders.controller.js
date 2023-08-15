@@ -1,18 +1,20 @@
 const path = require("path");
 
-// Use the existing order data
+// Loading the existing orders data from the data file
 const orders = require(path.resolve("src/data/orders-data"));
 
-// Use this function to assigh ID's when necessary
+// Utility function to generate a unique ID for new orders
 const nextId = require("../utils/nextId");
 const { json } = require("express");
 
-// TODO: Implement the /orders handlers needed to make the tests pass
+// Endpoint handlers for the /orders routes
 
+// Lists all the orders
 function list(req, res) {
   res.json({ data: orders });
 }
 
+// Middleware to validate the presence of 'deliverTo' in the request body
 function hasDeliver(req, res, next) {
   const { deliverTo } = req.body.data;
   if (!deliverTo || deliverTo === "") {
@@ -24,6 +26,7 @@ function hasDeliver(req, res, next) {
   next();
 }
 
+// Middleware to validate the presence of 'mobileNumber' in the request body
 function hasNumber(req, res, next) {
   const { mobileNumber } = req.body.data;
   if (!mobileNumber || mobileNumber === "") {
@@ -35,6 +38,7 @@ function hasNumber(req, res, next) {
   next();
 }
 
+// Middleware to validate the presence and format of 'dishes' in the request body
 function hasDishes(req, res, next) {
   const { dishes } = req.body.data;
   if (!dishes) {
@@ -52,6 +56,7 @@ function hasDishes(req, res, next) {
   }
 }
 
+// Middleware to validate the 'quantity' of each dish in the request body
 function hasQuantity(req, res, next) {
   const { dishes } = req.body.data;
 
@@ -68,11 +73,10 @@ function hasQuantity(req, res, next) {
       });
     }
   }
-
-  // If all dishes have valid quantities, proceed to the next middleware or route handler
   next();
 }
 
+// Handler to create a new order
 function create(req, res) {
   const { deliverTo, mobileNumber, status, dishes } = req.body.data;
   const newOrder = {
@@ -87,8 +91,7 @@ function create(req, res) {
   res.status(201).json({ data: newOrder });
 }
 
-// read id
-
+// Middleware to check if the order with the provided ID exists
 function orderExist(req, res, next) {
   const { orderId } = req.params;
   const foundOrder = orders.find((order) => order.id === orderId);
@@ -101,16 +104,23 @@ function orderExist(req, res, next) {
   });
 }
 
+// Handler to retrieve a single order by ID
 function read(req, res) {
   const { orderId } = req.params;
   const foundOrder = orders.find((order) => order.id === orderId);
   res.json({ data: foundOrder });
 }
 
+// Middleware to validate the status of the order in the request body
 function hasStatus(req, res, next) {
   const { status } = req.body.data;
-  const validStatuses = ["pending", "preparing", "out-for-delivery", "delivered"];
-  
+  const validStatuses = [
+    "pending",
+    "preparing",
+    "out-for-delivery",
+    "delivered",
+  ];
+
   if (status === "delivered") {
     return next({
       status: 400,
@@ -119,18 +129,19 @@ function hasStatus(req, res, next) {
   } else if (!status || status === "" || !validStatuses.includes(status)) {
     return next({
       status: 400,
-      message:
-        "Order must have a status of pending, preparing, out-for-delivery, delivered",
+      message: "Order must have a valid status",
     });
   } else {
     next();
   }
 }
 
+// Handler to update an existing order by ID
 function update(req, res, next) {
   const { orderId } = req.params;
   const foundOrder = orders.find((order) => order.id === orderId);
-  const { data: { deliverTo, mobileNumber, status, dishes, id } = {} } = req.body;
+  const { data: { deliverTo, mobileNumber, status, dishes, id } = {} } =
+    req.body;
 
   if (id && id !== orderId) {
     return next({
@@ -147,6 +158,7 @@ function update(req, res, next) {
   res.json({ data: foundOrder });
 }
 
+// Handler to delete an order by ID
 function destroy(req, res, next) {
   const { orderId } = req.params;
   const foundOrder = orders.find((order) => order.id === orderId);
@@ -159,10 +171,11 @@ function destroy(req, res, next) {
     });
   }
 
-  const deleteOrder = orders.splice(index, 1);
+  orders.splice(index, 1);
   res.sendStatus(204);
 }
 
+// Exporting the handlers to be used in the routes
 module.exports = {
   create: [hasDeliver, hasNumber, hasDishes, hasQuantity, create],
   list,
